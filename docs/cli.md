@@ -21,6 +21,8 @@ Download Alpaca historical bars into the local cache:
 .venv/bin/python -m qts.data.alpaca_downloader --config config/download_alpaca_data.yaml
 ```
 
+The downloader reads `APCA_API_KEY_ID` and `APCA_API_SECRET_KEY` from `.env` by default.
+
 After reinstalling the editable package, the script entry point is:
 
 ```bash

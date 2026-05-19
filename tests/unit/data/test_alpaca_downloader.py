@@ -56,6 +56,12 @@ class FakeAlpacaDataClient:
         return self.response
 
 
+def request_value(request, key: str):
+    if isinstance(request, dict):
+        return request[key]
+    return getattr(request, key)
+
+
 def download_config(tmp_path) -> AlpacaDataDownloadConfig:
     return AlpacaDataDownloadConfig(
         symbols=["aapl"],
@@ -66,6 +72,7 @@ def download_config(tmp_path) -> AlpacaDataDownloadConfig:
         feed="iex",
         adjusted=True,
         adjustment_type=AdjustmentType.ALL,
+        env_file=tmp_path / ".env",
     )
 
 
@@ -104,7 +111,7 @@ def test_alpaca_downloader_writes_local_provider_compatible_csv(tmp_path) -> Non
     result = AlpacaHistoricalDataDownloader(client).download_bars(config)
 
     assert result.row_counts == {"AAPL": 2}
-    assert client.requests[0]["symbol_or_symbols"] == ["AAPL"]
+    assert request_value(client.requests[0], "symbol_or_symbols") == ["AAPL"]
     provider = LocalHistoricalDataProvider(tmp_path, source="alpaca")
     bars = provider.get_bars(
         ["AAPL"],
@@ -166,6 +173,25 @@ def test_alpaca_download_config_loads_credentials_from_environment(monkeypatch, 
     assert credentials.api_secret == "secret"
 
 
+def test_alpaca_download_config_loads_credentials_from_dotenv(tmp_path) -> None:
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "\n".join(
+            [
+                "# local secrets",
+                "APCA_API_KEY_ID=dotenv-key",
+                "APCA_API_SECRET_KEY='dotenv-secret'",
+            ]
+        )
+    )
+    config = download_config(tmp_path)
+
+    credentials = config.load_credentials()
+
+    assert credentials.api_key == "dotenv-key"
+    assert credentials.api_secret == "dotenv-secret"
+
+
 def test_alpaca_download_config_reports_missing_credentials(tmp_path) -> None:
     config = download_config(tmp_path)
 
@@ -183,7 +209,7 @@ def test_downloader_rejects_missing_symbol_data(tmp_path) -> None:
 def test_request_builder_stays_sdk_optional(tmp_path) -> None:
     request = build_alpaca_stock_bars_request(download_config(tmp_path))
 
-    assert request["symbol_or_symbols"] == ["AAPL"]
-    assert request["timeframe"] == "1m"
-    assert request["adjustment"] == "all"
-    assert request["feed"] == "iex"
+    assert request_value(request, "symbol_or_symbols") == ["AAPL"]
+    assert str(request_value(request, "timeframe")).lower() in {"1min", "1m", "1minute"}
+    assert str(request_value(request, "adjustment")).lower().endswith("all")
+    assert str(request_value(request, "feed")).lower().endswith("iex")

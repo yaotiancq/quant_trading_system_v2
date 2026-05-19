@@ -31,9 +31,11 @@ Run the included example backtest:
 Download Alpaca bars into the local backtest cache first when using real market data:
 
 ```bash
-ALPACA_PAPER_API_KEY=... ALPACA_PAPER_API_SECRET=... \
-  .venv/bin/python -m qts.data.alpaca_downloader --config config/download_alpaca_data.yaml
+.venv/bin/python -m qts.data.alpaca_downloader --config config/download_alpaca_data.yaml
 ```
+
+Credentials are read from `.env` by default using `APCA_API_KEY_ID` and
+`APCA_API_SECRET_KEY`.
 
 Or use the CLI module:
 

@@ -23,7 +23,9 @@ be stored in config files or run artifacts.
 - `output_dir`: local cache directory consumed by backtests.
 - `feed`: Alpaca data feed, for example `iex`.
 - `adjusted` / `adjustment_type`: bar adjustment metadata written to CSV.
-- `api_key_env` / `api_secret_env`: environment variable names for credentials.
+- `env_file`: local `.env` file containing Alpaca credentials.
+- `api_key_env` / `api_secret_env`: credential variable names, usually
+  `APCA_API_KEY_ID` and `APCA_API_SECRET_KEY`.
 - `overwrite`: whether to replace existing cached CSV files.
 
 Run the downloader before a backtest when using real Alpaca data:
@@ -31,4 +33,12 @@ Run the downloader before a backtest when using real Alpaca data:
 ```bash
 .venv/bin/python -m qts.data.alpaca_downloader --config config/download_alpaca_data.yaml
 .venv/bin/python -m qts.cli.main --config config/backtest.yaml
+```
+
+The downloader reads credentials from process environment first, then from `.env`. A local `.env`
+should look like:
+
+```bash
+APCA_API_KEY_ID=your-key-id
+APCA_API_SECRET_KEY=your-secret-key
 ```

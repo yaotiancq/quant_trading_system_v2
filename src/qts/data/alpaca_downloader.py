@@ -18,7 +18,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Self
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from qts.config.loader import load_config
 from qts.core.enums import AdjustmentType
@@ -43,6 +43,18 @@ BAR_CSV_FIELDS = [
     "is_complete",
     "received_at",
 ]
+DEFAULT_API_KEY_ENV_ALIASES = [
+    "APCA_API_KEY_ID",
+    "ALPACA_API_KEY_ID",
+    "ALPACA_PAPER_API_KEY",
+    "ALPACA_API_KEY",
+]
+DEFAULT_API_SECRET_ENV_ALIASES = [
+    "APCA_API_SECRET_KEY",
+    "ALPACA_API_SECRET_KEY",
+    "ALPACA_PAPER_API_SECRET",
+    "ALPACA_SECRET_KEY",
+]
 
 
 class AlpacaDataCredentials(QtsModel):
@@ -63,8 +75,15 @@ class AlpacaDataDownloadConfig(QtsModel):
     feed: str = "iex"
     adjusted: bool = True
     adjustment_type: AdjustmentType = AdjustmentType.ALL
-    api_key_env: str = "ALPACA_PAPER_API_KEY"
-    api_secret_env: str = "ALPACA_PAPER_API_SECRET"
+    env_file: Path | None = Path(".env")
+    api_key_env: str = "APCA_API_KEY_ID"
+    api_secret_env: str = "APCA_API_SECRET_KEY"
+    api_key_env_aliases: list[str] = Field(
+        default_factory=lambda: list(DEFAULT_API_KEY_ENV_ALIASES)
+    )
+    api_secret_env_aliases: list[str] = Field(
+        default_factory=lambda: list(DEFAULT_API_SECRET_ENV_ALIASES)
+    )
     overwrite: bool = True
     allow_empty: bool = False
 
@@ -105,24 +124,34 @@ class AlpacaDataDownloadConfig(QtsModel):
         return cls.model_validate(load_config(path))
 
     def load_credentials(self) -> AlpacaDataCredentials:
-        """Resolve API credentials from the configured environment variable names."""
+        """Resolve API credentials from process environment or the configured `.env` file."""
 
-        api_key = os.getenv(self.api_key_env)
-        api_secret = os.getenv(self.api_secret_env)
-        missing = [
-            name
-            for name, value in (
-                (self.api_key_env, api_key),
-                (self.api_secret_env, api_secret),
+        env_values = _load_env_file(self.env_file)
+        api_key = _resolve_credential(
+            primary_name=self.api_key_env,
+            aliases=self.api_key_env_aliases,
+            env_values=env_values,
+        )
+        api_secret = _resolve_credential(
+            primary_name=self.api_secret_env,
+            aliases=self.api_secret_env_aliases,
+            env_values=env_values,
+        )
+        if not api_key or not api_secret:
+            checked_names = sorted(
+                {
+                    self.api_key_env,
+                    self.api_secret_env,
+                    *self.api_key_env_aliases,
+                    *self.api_secret_env_aliases,
+                }
             )
-            if not value
-        ]
-        if missing:
             raise UnsupportedOperationError(
-                "missing Alpaca data credential environment variables: "
-                + ", ".join(sorted(missing))
+                "missing Alpaca data credentials. Checked process environment and "
+                f"{self.env_file or 'no .env file'} for: "
+                + ", ".join(checked_names)
             )
-        return AlpacaDataCredentials(api_key=str(api_key), api_secret=str(api_secret))
+        return AlpacaDataCredentials(api_key=api_key, api_secret=api_secret)
 
 
 class AlpacaDataDownloadResult(QtsModel):
@@ -258,6 +287,61 @@ def _alpaca_request_payload(config: AlpacaDataDownloadConfig) -> dict[str, Any]:
         "adjustment": _coerce_alpaca_adjustment(config.adjustment_type),
         "feed": _coerce_alpaca_feed(config.feed),
     }
+
+
+def _load_env_file(env_file: str | Path | None) -> dict[str, str]:
+    if env_file is None:
+        return {}
+    path = Path(env_file)
+    if not path.exists():
+        return {}
+
+    values: dict[str, str] = {}
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].lstrip()
+        key, separator, value = line.partition("=")
+        if not separator:
+            continue
+        key = key.strip()
+        if key:
+            values[key] = _parse_env_value(value.strip())
+    return values
+
+
+def _parse_env_value(value: str) -> str:
+    if not value:
+        return ""
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        unquoted = value[1:-1]
+        if value[0] == '"':
+            return unquoted.replace(r"\"", '"').replace(r"\n", "\n")
+        return unquoted
+    for marker in (" #", "\t#"):
+        if marker in value:
+            value = value.split(marker, 1)[0].rstrip()
+    return value
+
+
+def _resolve_credential(
+    *,
+    primary_name: str,
+    aliases: Sequence[str],
+    env_values: Mapping[str, str],
+) -> str | None:
+    names = list(dict.fromkeys([primary_name, *aliases]))
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+    for name in names:
+        value = env_values.get(name)
+        if value:
+            return value
+    return None
 
 
 def _coerce_alpaca_timeframe(timeframe: str) -> Any:

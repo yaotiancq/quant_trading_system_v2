@@ -6,6 +6,7 @@ output_dir: data/market
 feed: iex
 adjusted: true
 adjustment_type: all
-api_key_env: ALPACA_PAPER_API_KEY
-api_secret_env: ALPACA_PAPER_API_SECRET
+env_file: .env
+api_key_env: APCA_API_KEY_ID
+api_secret_env: APCA_API_SECRET_KEY
 overwrite: true
