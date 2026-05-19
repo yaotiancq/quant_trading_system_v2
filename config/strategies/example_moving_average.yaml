@@ -1,0 +1,5 @@
+strategy_id: ma-cross-example
+symbols: [AAPL]
+fast_window: 20
+slow_window: 50
+

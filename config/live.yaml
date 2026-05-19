@@ -1,0 +1,20 @@
+mode: live
+
+broker:
+  type: alpaca
+  environment: live
+  api_key_env: ALPACA_LIVE_API_KEY
+  api_secret_env: ALPACA_LIVE_API_SECRET
+
+live:
+  kill_switch_enabled: true
+  reconciliation_interval_seconds: 30
+  data_staleness_limit_seconds: 5
+  safe_mode_on_reconciliation_mismatch: true
+
+risk:
+  max_order_notional: 100
+  max_daily_loss_pct: 0.005
+  max_daily_trade_count: 5
+  allow_short: false
+

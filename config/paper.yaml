@@ -1,0 +1,22 @@
+mode: paper
+
+broker:
+  type: alpaca
+  environment: paper
+  api_key_env: ALPACA_PAPER_API_KEY
+  api_secret_env: ALPACA_PAPER_API_SECRET
+
+data:
+  provider: alpaca
+  feed: iex
+  realtime: true
+
+live:
+  reconciliation_interval_seconds: 60
+  data_staleness_limit_seconds: 10
+  dry_run: false
+
+risk:
+  max_order_notional: 1000
+  max_daily_trade_count: 20
+

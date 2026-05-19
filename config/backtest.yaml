@@ -1,0 +1,26 @@
+mode: backtest
+
+account:
+  account_id: backtest-account
+  initial_cash: 100000
+
+data:
+  provider: local
+  source: parquet
+  timeframe: 1m
+  adjusted: true
+  adjustment_type: all
+
+broker:
+  type: backtest
+
+execution:
+  default_order_type: market
+  default_time_in_force: day
+
+risk:
+  max_order_notional: 5000
+  max_symbol_exposure_pct: 0.10
+  max_gross_exposure_pct: 1.00
+  daily_loss_limit_pct: 0.02
+

@@ -1,0 +1,6 @@
+max_order_notional: 5000
+max_symbol_exposure_pct: 0.10
+max_gross_exposure_pct: 1.00
+daily_loss_limit_pct: 0.02
+allow_short: false
+
