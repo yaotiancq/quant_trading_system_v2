@@ -106,12 +106,17 @@ class LocalHistoricalDataProvider(MarketDataProvider):
     def _load_symbol_bars(self, symbol: str, timeframe: str) -> list[Bar]:
         key = (symbol, timeframe)
         if key not in self._bar_cache:
-            path = self._resolve_bar_file(symbol, timeframe)
+            path = self.resolve_bar_file(symbol, timeframe)
             self._bar_cache[key] = sorted(
                 self._load_bar_file(path, symbol=symbol, timeframe=timeframe),
                 key=lambda bar: bar.timestamp,
             )
         return self._bar_cache[key]
+
+    def resolve_bar_file(self, symbol: str, timeframe: str) -> Path:
+        """Return the local file path that would be used for a symbol/timeframe."""
+
+        return self._resolve_bar_file(symbol, timeframe)
 
     def _resolve_bar_file(self, symbol: str, timeframe: str) -> Path:
         candidates = [

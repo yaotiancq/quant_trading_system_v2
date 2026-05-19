@@ -22,6 +22,9 @@ parquet = [
   "pyarrow>=15,<23",
 ]
 
+[project.scripts]
+qts-backtest = "qts.cli.main:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

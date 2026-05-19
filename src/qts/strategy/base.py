@@ -15,6 +15,8 @@ class Strategy(ABC):
     Strategies produce signals only. They must not submit orders or access concrete brokers.
     """
 
+    strategy_id: str
+
     @abstractmethod
     def initialize(self, context: StrategyContext) -> None:
         """Initialize strategy-owned state."""
@@ -46,4 +48,3 @@ class Strategy(ABC):
     @abstractmethod
     def on_stop(self, context: StrategyContext) -> None:
         """Handle runtime stop."""
-

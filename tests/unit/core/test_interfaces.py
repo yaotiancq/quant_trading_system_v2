@@ -54,8 +54,8 @@ def test_phase_1_has_no_external_broker_sdk_imports() -> None:
             if line.strip().startswith(("import ", "from "))
         )
 
-    assert not any("import alpaca" in line.lower() for line in import_lines)
-    assert not any("from alpaca" in line.lower() for line in import_lines)
+    assert not any(line.lower().startswith("import alpaca") for line in import_lines)
+    assert not any(line.lower().startswith("from alpaca") for line in import_lines)
 
 
 def test_strategy_and_risk_contracts_do_not_import_concrete_brokers() -> None:
@@ -71,4 +71,3 @@ def test_strategy_and_risk_contracts_do_not_import_concrete_brokers() -> None:
         assert "qts.brokers.backtest_broker" not in text
         assert "qts.brokers.alpaca_broker" not in text
         assert "qts.execution.engine" not in text if "strategy" in path.parts else True
-

@@ -7,9 +7,23 @@ account:
 data:
   provider: local
   source: parquet
+  root: data/market
   timeframe: 1m
   adjusted: true
   adjustment_type: all
+
+universe:
+  symbols: [AAPL]
+
+strategies:
+  strategy_id: ma-cross-example
+  symbol: AAPL
+  fast_window: 2
+  slow_window: 3
+  target_notional: 1000
+
+portfolio:
+  default_notional: 1000
 
 broker:
   type: backtest
@@ -18,9 +32,16 @@ execution:
   default_order_type: market
   default_time_in_force: day
 
+backtest:
+  start_date: "2024-01-02"
+  end_date: "2024-01-02"
+  bar_timestamp_policy: bar_end
+  signal_timing_policy: on_bar_close
+  order_activation_policy: next_event
+  allow_same_event_fill: false
+
 risk:
   max_order_notional: 5000
   max_symbol_exposure_pct: 0.10
   max_gross_exposure_pct: 1.00
   daily_loss_limit_pct: 0.02
-
