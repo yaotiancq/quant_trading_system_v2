@@ -1,14 +1,14 @@
 # Quant Trading System v2
 
-Phase 1 establishes the scaffold, domain models, and abstract contracts for a modular
-quantitative trading system. Strategy, risk, execution, and broker-facing code are intentionally
-mode-agnostic at this stage.
+Phase 2 establishes the local historical data path, U.S. equity calendar, static universe,
+data quality checks, data manifests, and a clock-aware `MarketDataPortal`.
 
 ## Current Status
 
-- Phase: 1
-- Scope: core models, event models, abstract interfaces, validation, and tests
-- Not included yet: concrete data providers, backtest broker, Alpaca adapters, live runner, or CLI
+- Phase: 2
+- Scope: core models, abstract interfaces, local historical data, calendar, static universe,
+  no-lookahead portal, data quality checks, manifests, and tests
+- Not included yet: backtest broker, strategy engine, Alpaca adapters, live runner, or CLI
 
 ## Development
 
@@ -24,4 +24,3 @@ Optional checks after installing development dependencies:
 .venv/bin/python -m ruff check .
 .venv/bin/python -m mypy src
 ```
-
