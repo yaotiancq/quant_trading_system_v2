@@ -89,6 +89,7 @@ class BacktestEngine:
         calendar = USEquityCalendar()
         provider = LocalHistoricalDataProvider(
             data_root,
+            source=str(data_config.get("source", "local")),
             default_timeframe=timeframe,
             adjusted=adjusted,
             adjustment_type=AdjustmentType(str(data_config.get("adjustment_type", "all"))),
@@ -277,7 +278,7 @@ class BacktestEngine:
             timeframe=timeframe,
             start_time=start,
             end_time=end,
-            data_source="local",
+            data_source=provider.source,
             adjusted=provider.adjusted,
             adjustment_type=provider.adjustment_type,
             file_paths=file_paths,

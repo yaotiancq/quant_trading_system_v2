@@ -2,6 +2,7 @@
 
 ## 0.1.0
 
+- Added independent Alpaca historical bar downloader, Alpaca download config, CSV normalization tests, and data provenance in backtest manifests.
 - Added Phase 7 CLI entry point, sample dataset, documentation pages, package script, and final regression smoke tests.
 - Added Phase 6 live safety service, kill switch, heartbeat monitor, reconciliation safe mode, audit sanitization, and dry-run live runner.
 - Added Phase 5 SDK-optional Alpaca broker adapter, mappings, environment credential loading, mock integration tests, and reconciliation service.

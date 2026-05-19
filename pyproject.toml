@@ -21,9 +21,13 @@ dev = [
 parquet = [
   "pyarrow>=15,<23",
 ]
+alpaca = [
+  "alpaca-py>=0.37,<1",
+]
 
 [project.scripts]
 qts-backtest = "qts.cli.main:main"
+qts-download-alpaca-data = "qts.data.alpaca_downloader:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

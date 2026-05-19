@@ -18,3 +18,13 @@ artifacts plus a performance summary.
 
 Phase 7 adds package/usage polish: CLI wiring, sample local data, configuration docs, and
 regression smoke tests.
+
+Alpaca historical data is handled as an independent acquisition step:
+
+```text
+Alpaca historical API -> qts.data.alpaca_downloader -> data/market/*.csv
+data/market/*.csv -> LocalHistoricalDataProvider -> HistoricalMarketDataPortal -> BacktestEngine
+```
+
+The backtest engine never calls Alpaca directly. This keeps simulations deterministic and makes
+the exact downloaded CSV files part of the run manifest.

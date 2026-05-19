@@ -6,7 +6,7 @@ account:
 
 data:
   provider: local
-  source: parquet
+  source: alpaca
   root: data/market
   timeframe: 1m
   adjusted: true

@@ -12,6 +12,7 @@ def test_phase7_docs_and_sample_data_exist() -> None:
     assert (root / "docs" / "alpaca_integration.md").exists()
     assert (root / "docs" / "cli.md").exists()
     assert (root / "docs" / "configuration.md").exists()
+    assert (root / "config" / "download_alpaca_data.yaml").exists()
     assert (root / "data" / "market" / "AAPL_1m.csv").exists()
 
 
@@ -19,4 +20,3 @@ def test_cli_parser_accepts_config_argument() -> None:
     args = build_parser().parse_args(["--config", "config/backtest.yaml"])
 
     assert args.config == "config/backtest.yaml"
-

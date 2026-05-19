@@ -1,7 +1,8 @@
 # Quant Trading System v2
 
 Phase 7 completes the first repository pass with docs, sample data, CLI wiring, examples, and
-regression coverage.
+regression coverage. The backtest data path now expects historical bars to be materialized from
+Alpaca into the local data cache before simulation.
 
 ## Current Status
 
@@ -9,9 +10,9 @@ regression coverage.
 - Scope: core models, abstract interfaces, local historical data, calendar, static universe,
   no-lookahead portal, data quality checks, manifests, backtest broker, fill model, slippage,
   commission, strategy engine, portfolio construction, risk, execution, full backtest, artifacts,
-  Alpaca paper adapter, reconciliation scaffolding, live safety, dry-run runner, CLI, docs,
-  sample data, examples, and tests
-- Not included yet: production Alpaca SDK client construction and advanced strategy/risk models
+  Alpaca paper adapter, Alpaca historical bar downloader, reconciliation scaffolding, live safety,
+  dry-run runner, CLI, docs, sample data, examples, and tests
+- Not included yet: advanced strategy/risk models
 
 ## Development
 
@@ -25,6 +26,13 @@ Run the included example backtest:
 
 ```bash
 .venv/bin/python examples/run_backtest_ma_cross.py
+```
+
+Download Alpaca bars into the local backtest cache first when using real market data:
+
+```bash
+ALPACA_PAPER_API_KEY=... ALPACA_PAPER_API_SECRET=... \
+  .venv/bin/python -m qts.data.alpaca_downloader --config config/download_alpaca_data.yaml
 ```
 
 Or use the CLI module:

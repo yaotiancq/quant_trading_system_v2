@@ -10,3 +10,20 @@ SDK client later, while unit tests use a mock client.
 Phase 6 adds live-safety controls around broker usage: kill switch, safe mode, data staleness,
 broker health checks, reconciliation mismatch handling, sanitized audit events, and dry-run order
 blocking.
+
+Historical backtest data uses a separate acquisition module:
+
+- `qts.data.alpaca_downloader` builds an Alpaca historical data client only when invoked.
+- It writes normalized CSV files such as `data/market/AAPL_1m.csv`.
+- `BacktestEngine` reads those files through `LocalHistoricalDataProvider`; it does not call
+  Alpaca during simulation.
+- The backtest manifest records `data.source` from config, so Alpaca-sourced caches remain visible
+  in run artifacts.
+
+Example:
+
+```bash
+ALPACA_PAPER_API_KEY=... ALPACA_PAPER_API_SECRET=... \
+  .venv/bin/python -m qts.data.alpaca_downloader --config config/download_alpaca_data.yaml
+.venv/bin/python -m qts.cli.main --config config/backtest.yaml
+```

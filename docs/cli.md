@@ -15,3 +15,14 @@ qts-backtest --config config/backtest.yaml
 The command prints the run id, run directory, and total return. Artifacts are written under
 `runs/backtests/{run_id}/`.
 
+Download Alpaca historical bars into the local cache:
+
+```bash
+.venv/bin/python -m qts.data.alpaca_downloader --config config/download_alpaca_data.yaml
+```
+
+After reinstalling the editable package, the script entry point is:
+
+```bash
+qts-download-alpaca-data --config config/download_alpaca_data.yaml
+```

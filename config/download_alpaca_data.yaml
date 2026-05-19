@@ -1,0 +1,11 @@
+symbols: [AAPL]
+timeframe: 1m
+start: "2024-01-02T14:30:00+00:00"
+end: "2024-01-02T21:00:00+00:00"
+output_dir: data/market
+feed: iex
+adjusted: true
+adjustment_type: all
+api_key_env: ALPACA_PAPER_API_KEY
+api_secret_env: ALPACA_PAPER_API_SECRET
+overwrite: true
