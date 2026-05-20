@@ -106,11 +106,82 @@ def chart_html(klines: Iterable[KLine], title: str) -> str:
 </head>
 <body>
   <div id="meta"><strong>{safe_title}</strong></div>
+  <div style="padding: 12px; background: #f1f3f5; border-bottom: 1px solid #ddd;">
+    <label for="timezone-select" style="font-size: 14px; margin-right: 8px;">Timezone:</label>
+    <select id="timezone-select" style="font-size: 14px; padding: 4px 8px;">
+      <option value="UTC">UTC</option>
+      <option value="America/New_York">America/New_York</option>
+      <option value="America/Los_Angeles">America/Los_Angeles</option>
+      <option value="Local">Browser Local</option>
+    </select>
+  </div>
   <div id="chart"></div>
   <script>
     const chartData = {data_json};
+    const plotTimestamps = chartData.timestamps.map((ts) => new Date(ts));
+    const timeZoneFormatters = {{
+      UTC: new Intl.DateTimeFormat("en-US", {{
+        timeZone: "UTC",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }}),
+      "America/New_York": new Intl.DateTimeFormat("en-US", {{
+        timeZone: "America/New_York",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }}),
+      "America/Los_Angeles": new Intl.DateTimeFormat("en-US", {{
+        timeZone: "America/Los_Angeles",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }}),
+      Local: new Intl.DateTimeFormat("en-US", {{
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }}),
+    }};
+
+    function formatIsoTime(date, timezone) {{
+      const formatter = timeZoneFormatters[timezone] || timeZoneFormatters.UTC;
+      const parts = formatter.formatToParts(date);
+      const values = parts.reduce((acc, part) => {{
+        if (part.type !== 'literal') {{
+          acc[part.type] = part.value;
+        }}
+        return acc;
+      }}, {{}});
+      return `${{values.year}}-${{values.month}}-${{values.day}} ${{values.hour}}:${{values.minute}}:${{values.second}}`;
+    }}
+
+    function formattedXValues(timezone) {{
+      return plotTimestamps.map((date) => formatIsoTime(date, timezone));
+    }}
+
+    const initialTimeZone = 'UTC';
+    const initialTimeValues = formattedXValues(initialTimeZone);
+
     const traceCandle = {{
-      x: chartData.timestamps,
+      x: initialTimeValues,
       open: chartData.open,
       high: chartData.high,
       low: chartData.low,
@@ -119,9 +190,11 @@ def chart_html(klines: Iterable[KLine], title: str) -> str:
       name: 'Price',
       increasing: {{ line: {{ color: '#26a69a' }} }},
       decreasing: {{ line: {{ color: '#ef5350' }} }},
+      text: chartData.volume,
+      hovertemplate: 'Time: %{{x}}<br>Open: %{{open}}<br>High: %{{high}}<br>Low: %{{low}}<br>Close: %{{close}}<br>Volume: %{{text}}<extra></extra>',
     }};
     const traceVwap = {{
-      x: chartData.timestamps,
+      x: initialTimeValues,
       y: chartData.vwap,
       type: 'scatter',
       mode: 'lines',
@@ -130,24 +203,37 @@ def chart_html(klines: Iterable[KLine], title: str) -> str:
       hovertemplate: 'VWAP: %{{y:.2f}}<extra></extra>',
     }};
     const traceVolume = {{
-      x: chartData.timestamps,
+      x: initialTimeValues,
       y: chartData.volume,
       marker: {{ color: '#888' }},
       type: 'bar',
       name: 'Volume',
       yaxis: 'y2',
       opacity: 0.5,
+      hovertemplate: 'Volume: %{{y}}<extra></extra>',
     }};
+
     const layout = {{
       title: chartData.title,
-      xaxis: {{ rangeslider: {{ visible: false }}, type: 'date' }},
+      xaxis: {{
+        rangeslider: {{ visible: false }},
+        type: 'category',
+        showticklabels: false,
+      }},
       yaxis: {{ domain: [0.25, 1], title: 'Price' }},
       yaxis2: {{ domain: [0, 0.2], title: 'Volume' }},
       legend: {{ orientation: 'h', x: 0, y: 1.05 }},
-      margin: {{ t: 60, b: 40, l: 60, r: 30 }},
+      margin: {{ t: 60, b: 30, l: 60, r: 30 }},
       hovermode: 'x unified',
     }};
     Plotly.newPlot('chart', [traceCandle, traceVwap, traceVolume], layout, {{ responsive: true }});
+
+    const timezoneSelect = document.getElementById('timezone-select');
+    timezoneSelect.addEventListener('change', (event) => {{
+      const timezone = event.target.value;
+      const updatedTimeValues = formattedXValues(timezone);
+      Plotly.restyle('chart', {{ x: [updatedTimeValues, updatedTimeValues, updatedTimeValues] }});
+    }});
   </script>
 </body>
 </html>"""
