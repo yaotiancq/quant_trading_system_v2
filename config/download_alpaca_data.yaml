@@ -1,7 +1,7 @@
-symbols: [AAPL]
+symbols: [SPY]
 timeframe: 1m
-start: "2024-01-02T14:30:00+00:00"
-end: "2024-01-02T21:00:00+00:00"
+start: "2026-05-19T14:30:00+00:00"
+end: "2026-05-20T21:00:00+00:00"
 output_dir: data/market
 feed: iex
 adjusted: true

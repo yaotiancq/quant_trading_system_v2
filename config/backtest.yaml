@@ -13,13 +13,13 @@ data:
   adjustment_type: all
 
 universe:
-  symbols: [AAPL]
+  symbols: [SPY]
 
 strategies:
   strategy_id: ma-cross-example
-  symbol: AAPL
-  fast_window: 2
-  slow_window: 3
+  symbol: SPY
+  fast_window: 5
+  slow_window: 10
   target_notional: 1000
 
 portfolio:
@@ -33,8 +33,8 @@ execution:
   default_time_in_force: day
 
 backtest:
-  start_date: "2024-01-02"
-  end_date: "2024-01-02"
+  start_date: "2026-05-19"
+  end_date: "2026-05-20"
   bar_timestamp_policy: bar_end
   signal_timing_policy: on_bar_close
   order_activation_policy: next_event
