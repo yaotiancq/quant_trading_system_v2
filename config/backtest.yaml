@@ -18,8 +18,8 @@ universe:
 strategies:
   strategy_id: ma-cross-example
   symbol: SPY
-  fast_window: 5
-  slow_window: 10
+  fast_window: 10
+  slow_window: 20
   target_notional: 1000
 
 portfolio:

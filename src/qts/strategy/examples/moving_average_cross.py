@@ -13,7 +13,7 @@ from qts.strategy.context import StrategyContext
 
 
 class MovingAverageCrossStrategy(Strategy):
-    """Simple moving-average strategy that emits standardized signals only."""
+    """Simple moving-average crossover strategy that emits signals on MA crossovers."""
 
     def __init__(
         self,
@@ -33,9 +33,28 @@ class MovingAverageCrossStrategy(Strategy):
         self.fast_window = fast_window
         self.slow_window = slow_window
         self.target_notional = target_notional
+        # Track previous state for crossover detection
+        self.prev_fast_ma: Decimal | None = None
+        self.prev_slow_ma: Decimal | None = None
 
     def initialize(self, context: StrategyContext) -> None:
         return None
+
+    @staticmethod
+    def calculate_simple_ma(closes: list[Decimal], window: int) -> Decimal:
+        """
+        Calculate simple moving average.
+        
+        Args:
+            closes: List of closing prices (Decimal).
+            window: Window size for the moving average.
+        
+        Returns:
+            Simple moving average as Decimal.
+        """
+        if len(closes) < window:
+            raise ValueError(f"Not enough data points: {len(closes)} < {window}")
+        return sum(closes[-window:], Decimal("0")) / Decimal(window)
 
     def on_start(self, context: StrategyContext) -> None:
         return None
@@ -53,28 +72,62 @@ class MovingAverageCrossStrategy(Strategy):
         if len(window.bars) < self.slow_window:
             return []
         closes = [bar.close for bar in window.bars]
-        fast_average = sum(closes[-self.fast_window:], Decimal("0")) / Decimal(self.fast_window)
-        slow_average = sum(closes, Decimal("0")) / Decimal(self.slow_window)
-        direction = SignalDirection.LONG if fast_average > slow_average else SignalDirection.FLAT
-        return [
-            Signal(
-                signal_id=new_id("signal"),
-                strategy_id=self.strategy_id,
-                symbol=self.symbol,
-                timestamp=event.bar.timestamp,
-                direction=direction,
-                strength=1.0,
-                confidence=1.0,
-                signal_type=SignalType.RULE_BASED,
-                suggested_notional=(
-                    self.target_notional if direction is SignalDirection.LONG else Decimal("0")
-                ),
-                metadata={
-                    "fast_average": str(fast_average),
-                    "slow_average": str(slow_average),
-                },
-            )
-        ]
+        fast_average = self.calculate_simple_ma(closes, self.fast_window)
+        slow_average = self.calculate_simple_ma(closes, self.slow_window)
+        
+        signals = []
+        
+        # Detect crossover: previous bar had fast <= slow, current bar has fast > slow
+        if self.prev_fast_ma is not None and self.prev_slow_ma is not None:
+            prev_was_below = self.prev_fast_ma <= self.prev_slow_ma
+            curr_is_above = fast_average > slow_average
+            
+            # Buy signal on upward crossover
+            if prev_was_below and curr_is_above:
+                signals.append(
+                    Signal(
+                        signal_id=new_id("signal"),
+                        strategy_id=self.strategy_id,
+                        symbol=self.symbol,
+                        timestamp=event.bar.timestamp,
+                        direction=SignalDirection.LONG,
+                        strength=1.0,
+                        confidence=1.0,
+                        signal_type=SignalType.RULE_BASED,
+                        suggested_notional=self.target_notional,
+                        metadata={
+                            "fast_average": str(fast_average),
+                            "slow_average": str(slow_average),
+                            "signal": "crossover_up",
+                        },
+                    )
+                )
+            # Sell signal on downward crossover
+            elif not prev_was_below and not curr_is_above:
+                signals.append(
+                    Signal(
+                        signal_id=new_id("signal"),
+                        strategy_id=self.strategy_id,
+                        symbol=self.symbol,
+                        timestamp=event.bar.timestamp,
+                        direction=SignalDirection.FLAT,
+                        strength=1.0,
+                        confidence=1.0,
+                        signal_type=SignalType.RULE_BASED,
+                        suggested_notional=Decimal("0"),
+                        metadata={
+                            "fast_average": str(fast_average),
+                            "slow_average": str(slow_average),
+                            "signal": "crossover_down",
+                        },
+                    )
+                )
+        
+        # Update state for next bar
+        self.prev_fast_ma = fast_average
+        self.prev_slow_ma = slow_average
+        
+        return signals
 
     def on_quote(self, context: StrategyContext, event: QuoteEvent) -> list[Signal]:
         return []
