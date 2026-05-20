@@ -22,7 +22,7 @@ from pydantic import Field, field_validator, model_validator
 
 from qts.config.loader import load_config
 from qts.core.enums import AdjustmentType
-from qts.core.errors import DataAccessError, UnsupportedOperationError
+from qts.core.errors import DataAccessError, QtsError, UnsupportedOperationError
 from qts.core.models import Bar, QtsModel
 from qts.core.time import ensure_timezone_aware
 
@@ -72,7 +72,7 @@ class AlpacaDataDownloadConfig(QtsModel):
     end: datetime
     timeframe: str = "1m"
     output_dir: Path = Path("data/market")
-    feed: str = "iex"
+    feed: str = "sip"
     adjusted: bool = True
     adjustment_type: AdjustmentType = AdjustmentType.ALL
     env_file: Path | None = Path(".env")
@@ -205,12 +205,17 @@ class AlpacaHistoricalDataDownloader:
     def _request_bars(self, config: AlpacaDataDownloadConfig) -> Any:
         client = self.client or build_alpaca_stock_data_client(config)
         request = build_alpaca_stock_bars_request(config)
-        method = getattr(client, "get_stock_bars", None)
-        if callable(method):
-            return method(request)
-        method = getattr(client, "get_bars", None)
-        if callable(method):
-            return method(request)
+        try:
+            method = getattr(client, "get_stock_bars", None)
+            if callable(method):
+                return method(request)
+            method = getattr(client, "get_bars", None)
+            if callable(method):
+                return method(request)
+        except QtsError:
+            raise
+        except Exception as exc:
+            raise _alpaca_request_error(exc, config) from exc
         raise UnsupportedOperationError(
             "Alpaca historical data client must expose get_stock_bars(request)"
         )
@@ -269,7 +274,10 @@ def main(argv: list[str] | None = None) -> None:
 
     parser = build_parser()
     args = parser.parse_args(argv)
-    result = download_bars_from_config(args.config)
+    try:
+        result = download_bars_from_config(args.config)
+    except QtsError as exc:
+        parser.exit(status=1, message=f"error: {exc}\n")
     print(f"source={result.source}")
     print(f"timeframe={result.timeframe}")
     for symbol in result.symbols:
@@ -287,6 +295,29 @@ def _alpaca_request_payload(config: AlpacaDataDownloadConfig) -> dict[str, Any]:
         "adjustment": _coerce_alpaca_adjustment(config.adjustment_type),
         "feed": _coerce_alpaca_feed(config.feed),
     }
+
+
+def _alpaca_request_error(exc: Exception, config: AlpacaDataDownloadConfig) -> QtsError:
+    message = str(exc).strip()
+    lowered = message.lower()
+    window = (
+        f"symbols={','.join(config.symbols)}, timeframe={config.timeframe}, "
+        f"feed={config.feed}, start={config.start.isoformat()}, end={config.end.isoformat()}"
+    )
+    if "subscription" in lowered and "recent sip" in lowered:
+        return UnsupportedOperationError(
+            "Alpaca rejected the SIP data request because your subscription does not permit "
+            f"querying recent SIP data ({window}). Keep `feed: sip` and move `end` to an older "
+            "historical timestamp covered by your plan, upgrade Alpaca market data, or use "
+            "`feed: iex` if SIP is not required for this run."
+        )
+    if "403" in lowered or "forbidden" in lowered:
+        return UnsupportedOperationError(
+            f"Alpaca rejected the market data request with 403 Forbidden ({window}). "
+            "Check that your API keys, account entitlements, requested feed, and date range are "
+            "allowed by your Alpaca data subscription."
+        )
+    return DataAccessError(f"Alpaca market data request failed ({window}): {message}")
 
 
 def _load_env_file(env_file: str | Path | None) -> dict[str, str]:

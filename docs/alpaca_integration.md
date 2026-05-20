@@ -15,11 +15,15 @@ Historical backtest data uses a separate acquisition module:
 
 - `qts.data.alpaca_downloader` builds an Alpaca historical data client only when invoked.
 - It writes normalized CSV files such as `data/market/AAPL_1m.csv`.
+- It uses Alpaca SIP data by default through `feed: sip`.
 - It reads credentials from process environment first, then from the configured `.env` file.
 - `BacktestEngine` reads those files through `LocalHistoricalDataProvider`; it does not call
   Alpaca during simulation.
 - The backtest manifest records `data.source` from config, so Alpaca-sourced caches remain visible
   in run artifacts.
+- A `subscription does not permit querying recent SIP data` response means the account cannot
+  access that recent SIP window. Use an older SIP `end` timestamp, upgrade market data, or set
+  `feed: iex` for non-SIP runs.
 
 Example:
 

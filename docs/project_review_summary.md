@@ -91,6 +91,7 @@ Important models include:
 ### `AlpacaHistoricalDataDownloader`
 - Downloads historical bars from an Alpaca-like data client as a separate acquisition step.
 - Writes normalized CSV files under `data/market/`.
+- Uses Alpaca SIP data by default.
 - Reads credentials from `.env` by default with `APCA_API_KEY_ID` and
   `APCA_API_SECRET_KEY`.
 - Keeps the backtest engine file-based and deterministic.

@@ -56,6 +56,11 @@ class FakeAlpacaDataClient:
         return self.response
 
 
+class FailingAlpacaDataClient:
+    def get_stock_bars(self, request):
+        raise RuntimeError('{"message":"subscription does not permit querying recent SIP data"}')
+
+
 def request_value(request, key: str):
     if isinstance(request, dict):
         return request[key]
@@ -69,7 +74,6 @@ def download_config(tmp_path) -> AlpacaDataDownloadConfig:
         end=datetime(2024, 1, 2, 14, 32, tzinfo=UTC),
         timeframe="1m",
         output_dir=tmp_path,
-        feed="iex",
         adjusted=True,
         adjustment_type=AdjustmentType.ALL,
         env_file=tmp_path / ".env",
@@ -206,10 +210,17 @@ def test_downloader_rejects_missing_symbol_data(tmp_path) -> None:
         AlpacaHistoricalDataDownloader(FakeAlpacaDataClient(FakeBarSet({}))).download_bars(config)
 
 
+def test_downloader_explains_recent_sip_subscription_rejection(tmp_path) -> None:
+    config = download_config(tmp_path)
+
+    with pytest.raises(UnsupportedOperationError, match="recent SIP data"):
+        AlpacaHistoricalDataDownloader(FailingAlpacaDataClient()).download_bars(config)
+
+
 def test_request_builder_stays_sdk_optional(tmp_path) -> None:
     request = build_alpaca_stock_bars_request(download_config(tmp_path))
 
     assert request_value(request, "symbol_or_symbols") == ["AAPL"]
     assert str(request_value(request, "timeframe")).lower() in {"1min", "1m", "1minute"}
     assert str(request_value(request, "adjustment")).lower().endswith("all")
-    assert str(request_value(request, "feed")).lower().endswith("iex")
+    assert str(request_value(request, "feed")).lower().endswith("sip")

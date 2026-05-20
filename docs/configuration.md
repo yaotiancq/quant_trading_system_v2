@@ -21,7 +21,7 @@ be stored in config files or run artifacts.
 - `timeframe`: QTS timeframe such as `1m`.
 - `start` / `end`: timezone-aware ISO datetimes.
 - `output_dir`: local cache directory consumed by backtests.
-- `feed`: Alpaca data feed, for example `iex`.
+- `feed`: Alpaca data feed; defaults to `sip`.
 - `adjusted` / `adjustment_type`: bar adjustment metadata written to CSV.
 - `env_file`: local `.env` file containing Alpaca credentials.
 - `api_key_env` / `api_secret_env`: credential variable names, usually
@@ -42,3 +42,8 @@ should look like:
 APCA_API_KEY_ID=your-key-id
 APCA_API_SECRET_KEY=your-secret-key
 ```
+
+If Alpaca returns `subscription does not permit querying recent SIP data`, your keys are valid but
+the requested SIP window is not allowed by the account plan. Keep `feed: sip` and use an older
+`end` timestamp covered by the plan, upgrade Alpaca market data, or switch to `feed: iex` when SIP
+is not required.

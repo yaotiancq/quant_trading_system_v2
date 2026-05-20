@@ -9,8 +9,21 @@ from qts.storage.run_store import BacktestRunStore
 
 def write_prices(path) -> None:
     rows = ["timestamp,open,high,low,close,volume"]
-    for minute in range(12):
-        price = Decimal("100") + Decimal(minute)
+    closes = [
+        Decimal("100"),
+        Decimal("99"),
+        Decimal("98"),
+        Decimal("101"),
+        Decimal("102"),
+        Decimal("103"),
+        Decimal("104"),
+        Decimal("105"),
+        Decimal("106"),
+        Decimal("107"),
+        Decimal("108"),
+        Decimal("109"),
+    ]
+    for minute, price in enumerate(closes):
         rows.append(
             ",".join(
                 [
@@ -65,4 +78,3 @@ def test_backtest_engine_runs_from_config_and_writes_artifacts(tmp_path) -> None
     assert (result.run_dir / "data_manifest.json").exists()
     payload = json.loads((result.run_dir / "performance_summary.json").read_text())
     assert "total_return" in payload
-
